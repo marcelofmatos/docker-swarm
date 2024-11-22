@@ -68,16 +68,20 @@ fi
 
 # Test 6: Docker logs access
 echo "Test 6: Check Docker logs"
-CONTAINER_ID=$(docker ps -q)
+CONTAINER_IDS=$(docker ps -q)
 
-if [[ -n "$CONTAINER_ID" ]]; then
-  docker logs $CONTAINER_ID > /tmp/docker_logs.log 2>&1
-  if [[ $? -eq 0 ]]; then
-    show_status "Docker logs are accessible" 0
-  else
-    show_status "Unable to access Docker logs" 1
-    echo "Evidence: $(tail -n 5 /tmp/docker_logs.log)"
-  fi
+if [[ -n "$CONTAINER_IDS" ]]; then
+  LOG_DIR="/tmp/docker_logs"
+  mkdir -p $LOG_DIR
+  for CONTAINER_ID in $CONTAINER_IDS; do
+    docker logs $CONTAINER_ID > "$LOG_DIR/$CONTAINER_ID.log" 2>&1
+    if [[ $? -eq 0 ]]; then
+      show_status "Logs for container $CONTAINER_ID saved to $LOG_DIR/$CONTAINER_ID.log" 0
+    else
+      show_status "Failed to fetch logs for container $CONTAINER_ID" 1
+      echo "Evidence: $(tail -n 5 $LOG_DIR/$CONTAINER_ID.log)"
+    fi
+  done
 else
   show_status "No running containers found" 1
 fi
