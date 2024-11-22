@@ -59,7 +59,7 @@ fi
 
 # Test 5: Time synchronization
 echo "Test 5: Time synchronization"
-TIME_SYNC=$(timedatectl | grep "NTP synchronized" | grep -o "yes")
+TIME_SYNC=$(timedatectl | grep "clock synchronized" | grep -o "yes")
 if [[ "$TIME_SYNC" == "yes" ]]; then
   show_status "Time is synchronized with NTP" 0
 else
@@ -68,16 +68,17 @@ fi
 
 # Test 6: Docker logs access
 echo "Test 6: Check Docker logs"
-docker logs $(docker ps -q) > /tmp/docker_logs.log 2>&1
-if [[ $? -eq 0 ]]; then
-  show_status "Docker logs are accessible" 0
+CONTAINER_ID=$(docker ps -q)
+
+if [[ -n "$CONTAINER_ID" ]]; then
+  docker logs $CONTAINER_ID > /tmp/docker_logs.log 2>&1
+  if [[ $? -eq 0 ]]; then
+    show_status "Docker logs are accessible" 0
+  else
+    show_status "Unable to access Docker logs" 1
+    echo "Evidence: $(tail -n 5 /tmp/docker_logs.log)"
+  fi
 else
-  show_status "Unable to access Docker logs" 1
-  echo "Evidence: $(tail -n 5 /tmp/docker_logs.log)"
+  show_status "No running containers found" 1
 fi
 
-# Detailed information if --verbose is used
-if [[ "$VERBOSE" -eq 1 ]]; then
-  echo "### Detailed Docker Information ###"
-  docker info
-fi
